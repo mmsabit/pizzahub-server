@@ -32,16 +32,26 @@ app.get('/',(req,res) =>{
 
 app.get('/menus/:vendorId', async (req, res) => {
   const vendorId = req.params.vendorId;
-  const menu = await menus.find({'vendor.id': vendorId}
+  const menu = await menus.find({'vendor.id': vendorId},{
+      projection: {
+        description: 0,
+        vendor: 0,
+      },
+    }
     ).toArray();
   res.send(menu)
 })
 
+app.get('/menu/:id', async(req, res) => {
+  const id = req.params.id;
+  const result = await menus.findOne({_id: new ObjectId(id)});
+  res.send(result);
+})
 
 app.post('/menus',async(req,res) =>{
   const newData = req.body;
   const result = await menus.insertOne(newData);
-  res.send(result)
+  res.send(result);
 })
 
 
