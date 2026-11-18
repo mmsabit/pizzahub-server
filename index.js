@@ -61,6 +61,18 @@ app.delete('/menu/:id', async(req,res)=>{
   res.send(result);
 })
 
+app.patch('/menu/:id', async(req,res)=>{
+  const id = req.params.id;
+    const updateData = req.body;
+    const filter = {_id: new ObjectId(id)};
+    const options = { upsert: true };
+    const updateDoc = {
+        $set: updateData,
+    };
+    const result = await menus.updateOne(filter, updateDoc, options);
+    res.send(result);
+})
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
