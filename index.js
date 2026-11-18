@@ -24,11 +24,23 @@ export async function connectToMongoDB(){
 
 const connectedClient = await connectToMongoDB();
 const db = connectedClient.db('pizza_hub');
-const menu = db.collection('menu');
+const menus = db.collection('menus');
 
-app.post('/menu',async(req,res) =>{
+app.get('/',(req,res) =>{
+    res.send("Ready with your pizza")
+})
+
+app.get('/menus/:vendorId', async (req, res) => {
+  const vendorId = req.params.vendorId;
+  const menu = await menus.find({'vendor.id': vendorId}
+    ).toArray();
+  res.send(menu)
+})
+
+
+app.post('/menus',async(req,res) =>{
   const newData = req.body;
-  const result = await menu.insertOne(newData);
+  const result = await menus.insertOne(newData);
   res.send(result)
 })
 
