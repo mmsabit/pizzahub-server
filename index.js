@@ -54,6 +54,12 @@ app.post('/menus',async(req,res) =>{
   res.send(result);
 })
 
+app.delete('/menu/:id', async(req,res)=>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)};
+  const result = await menus.deleteOne(query);
+  res.send(result);
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
