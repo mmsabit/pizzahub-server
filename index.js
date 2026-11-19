@@ -48,6 +48,11 @@ app.get('/menu/:id', async(req, res) => {
   res.send(result);
 })
 
+app.get('/available-menu', async(req, res)=>{
+  const availMenu = await menus.find({available: true, status: "approved"}).toArray();
+  res.send(availMenu);
+})
+
 app.post('/menus',async(req,res) =>{
   const newData = req.body;
   const result = await menus.insertOne(newData);
