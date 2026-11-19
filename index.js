@@ -25,6 +25,7 @@ export async function connectToMongoDB(){
 const connectedClient = await connectToMongoDB();
 const db = connectedClient.db('pizza_hub');
 const menus = db.collection('menus');
+const order = db.collection('order');
 
 app.get('/',(req,res) =>{
     res.send("Ready with your pizza")
@@ -47,10 +48,6 @@ app.get('/menu/:id', async(req, res) => {
   const result = await menus.findOne({_id: new ObjectId(id)});
   res.send(result);
 })
-
-
-
-
 
 app.post('/menus',async(req,res) =>{
   const newData = req.body;
@@ -103,13 +100,15 @@ app.patch('/adminmenu/:id', async (req, res) => {
       return res.status(409).send({ message: 'Only three menu items can be featured' });
     }
   }
-
   const result = await menus.updateOne({ _id: menuId }, { $set: updatedData });
-
-  
-
   res.send(result);
 });
+
+app.post('/order', async (req, res) =>{
+  const newData = req.body;
+  const result = await order.insertOne(newData);
+  res.send(result);
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
