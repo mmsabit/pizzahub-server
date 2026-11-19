@@ -110,6 +110,12 @@ app.post('/order', async (req, res) =>{
   res.send(result);
 })
 
+app.get('/customer_order/:userid', async(req, res) => {
+  const id = req.params.userid;
+  const result = await order.find({"customer.id": id}).toArray();
+  res.send(result);
+})
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
