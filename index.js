@@ -91,11 +91,22 @@ app.patch('/adminmenu/:id', async (req, res) => {
   const id = req.params.id;
   const updatedData = req.body;
 
-  const result = await menus.updateOne(
-    { _id: new ObjectId(id) },
-    { $set: updatedData },
-    { upsert: true }
-  );
+  const menuId = new ObjectId(id);
+
+  if (updatedData.featured === true) {
+    const featuredCount = await menus.countDocuments({
+      featured: true,
+      _id: { $ne: menuId },
+    });
+
+    if (featuredCount >= 3) {
+      return res.status(409).send({ message: 'Only three menu items can be featured' });
+    }
+  }
+
+  const result = await menus.updateOne({ _id: menuId }, { $set: updatedData });
+
+  
 
   res.send(result);
 });
