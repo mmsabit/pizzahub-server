@@ -48,6 +48,11 @@ app.get('/menu/:id', async(req, res) => {
   res.send(result);
 })
 
+app.get('/adminmenu/',async(req,res) =>{
+  const menuItem = await menus.find({}).toArray();
+  res.send(menuItem);
+})
+
 app.get('/available-menu', async(req, res)=>{
   const availMenu = await menus.find({available: true, status: "approved"}).toArray();
   res.send(availMenu);
