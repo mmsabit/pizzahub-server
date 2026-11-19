@@ -48,15 +48,9 @@ app.get('/menu/:id', async(req, res) => {
   res.send(result);
 })
 
-app.get('/adminmenu/',async(req,res) =>{
-  const menuItem = await menus.find({}).toArray();
-  res.send(menuItem);
-})
 
-app.get('/available-menu', async(req, res)=>{
-  const availMenu = await menus.find({available: true, status: "approved"}).toArray();
-  res.send(availMenu);
-})
+
+
 
 app.post('/menus',async(req,res) =>{
   const newData = req.body;
@@ -82,6 +76,29 @@ app.patch('/menu/:id', async(req,res)=>{
     const result = await menus.updateOne(filter, updateDoc, options);
     res.send(result);
 })
+
+app.get('/available-menu', async(req, res)=>{
+  const availMenu = await menus.find({available: true, status: "approved"}).toArray();
+  res.send(availMenu);
+})
+
+app.get('/adminmenu/',async(req,res) =>{
+  const menuItem = await menus.find({}).toArray();
+  res.send(menuItem);
+})
+
+app.patch('/adminmenu/:id', async (req, res) => {
+  const id = req.params.id;
+  const updatedData = req.body;
+
+  const result = await menus.updateOne(
+    { _id: new ObjectId(id) },
+    { $set: updatedData },
+    { upsert: true }
+  );
+
+  res.send(result);
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
