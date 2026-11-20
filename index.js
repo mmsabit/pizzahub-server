@@ -134,6 +134,12 @@ app.get('/customer_order/:userid', async(req, res) => {
   res.send(result);
 })
 
+app.get('/vendor_order/:vendorid', async(req, res) => {
+  const id = req.params.vendorid;
+  const result = await order.find({"vendor.id": id}).toArray();
+  res.send(result);
+})
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
