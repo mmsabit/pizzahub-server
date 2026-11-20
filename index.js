@@ -110,6 +110,24 @@ app.post('/order', async (req, res) =>{
   res.send(result);
 })
 
+app.get('/order/:id', async(req, res) => {
+  const id = req.params.id;
+  const result = await order.findOne({_id: new ObjectId(id)});
+  res.send(result);
+})
+
+app.patch('/order/:id', async(req,res)=>{
+  const id = req.params.id;
+    const updateData = req.body;
+    const filter = {_id: new ObjectId(id)};
+    const options = { upsert: true };
+    const updateDoc = {
+        $set: updateData,
+    };
+    const result = await order.updateOne(filter, updateDoc, options);
+    res.send(result);
+})
+
 app.get('/customer_order/:userid', async(req, res) => {
   const id = req.params.userid;
   const result = await order.find({"customer.id": id}).toArray();
