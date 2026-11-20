@@ -43,6 +43,11 @@ app.get('/menus/:vendorId', async (req, res) => {
   res.send(menu)
 })
 
+app.get('/menu',async(req,res) =>{
+  const menuItem = await menus.find({status: "approved"}).toArray();
+  res.send(menuItem);
+})
+
 app.get('/menu/:id', async(req, res) => {
   const id = req.params.id;
   const result = await menus.findOne({_id: new ObjectId(id)});
@@ -113,6 +118,11 @@ app.post('/order', async (req, res) =>{
 app.get('/order/:id', async(req, res) => {
   const id = req.params.id;
   const result = await order.findOne({_id: new ObjectId(id)});
+  res.send(result);
+})
+
+app.get('/order', async(req, res)=>{
+  const result = await order.find().toArray();
   res.send(result);
 })
 
