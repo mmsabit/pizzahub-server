@@ -31,6 +31,25 @@ app.get('/',(req,res) =>{
     res.send("Ready with your pizza")
 })
 
+app.get('/menus/search', async (req, res) => {
+    try {
+      const search = req.query.search;
+
+      const result = await menus.find({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { category: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { 'vendor.name': { $regex: search, $options: 'i' } }
+        ]
+      }).toArray();
+
+      res.send(result);
+    } catch (error) {
+      res.status(500).send({ message: 'Search failed' });
+    }
+});
+
 app.get('/menus/:vendorId', async (req, res) => {
   const vendorId = req.params.vendorId;
   const menu = await menus.find({'vendor.id': vendorId},{
