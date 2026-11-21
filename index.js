@@ -2,6 +2,9 @@ import express from 'express'
 import cors from "cors"
 import { MongoClient, ObjectId } from "mongodb";
 import 'dotenv/config'
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const app = express()
 const port = process.env.PORT || 8000
@@ -26,6 +29,8 @@ const connectedClient = await connectToMongoDB();
 const db = connectedClient.db('pizza_hub');
 const menus = db.collection('menus');
 const order = db.collection('order');
+const payments = db.collection('payments');
+const user = db.collection('user');
 
 app.get('/',(req,res) =>{
     res.send("Ready with your pizza")
@@ -167,6 +172,59 @@ app.get('/vendor_order/:vendorid', async(req, res) => {
   const id = req.params.vendorid;
   const result = await order.find({"vendor.id": id}).toArray();
   res.send(result);
+})
+
+app.post('/payments/checkout-verify', async (req, res)=>{
+  const {sessionId} = req.body
+
+  if (!sessionId) {
+        return res.send({ success: false, message: 'Session ID is required' });
+    }
+
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const {
+    client_reference_id,
+    status,
+    payment_status,
+    customer_email,
+    metadata,
+    payment_intent,
+  } = session;
+
+
+  if(status === 'complete' && payment_status === 'paid'){
+
+    const sessionQuery = { sessionId };
+    const existingPayment = await payments.findOne(sessionQuery);
+    if (existingPayment) {
+            return res.send({ success: false, message: 'Payment already verified' });
+        }
+    const paymentData = {
+    client_reference_id,
+    sessionId,
+    status,
+    payment_status,
+    customer_email,
+    metadata,
+    payment_intent,
+  };
+  const result = await payments.insertOne(paymentData);
+
+  const query = { _id: new ObjectId(client_reference_id) };
+
+        const updatedDoc = {
+            $set: {
+                premium: true,
+            }
+        }
+        const updateResult = await user.updateOne(
+            query,
+            updatedDoc
+        );
+        res.send({ success: true, result, updateResult });
+  }
+
+  res.send({ success: false, message: 'Payment verification failed' });
 })
 
 app.listen(port, () => {
