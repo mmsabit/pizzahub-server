@@ -68,7 +68,7 @@ app.get('/order/:id', async(req, res) => {
   const result = await order.findOne({_id: new ObjectId(id)});
   res.send(result);
 })
-
+ 
 // Open API
 app.get('/menu',async(req,res) =>{
   const menuItem = await menus.find({status: "approved"}).toArray();
@@ -80,6 +80,10 @@ app.get('/available-menu', async(req, res)=>{
   res.send(availMenu);
 })
 
+app. get('/featured_menu', async(req, res)=>{
+  const data = await menus.find({ featured: true }).toArray();
+  res.send(data)
+})
 //Vendor API
 app.get('/menus/:vendorId', async (req, res) => {
   const vendorId = req.params.vendorId;
@@ -133,14 +137,38 @@ app.delete('/menu/:id', async(req,res)=>{
 
 app.patch('/menu/:id', async(req,res)=>{
   const id = req.params.id;
-    const updateData = req.body;
-    const filter = {_id: new ObjectId(id)};
-    const options = { upsert: true };
-    const updateDoc = {
-        $set: updateData,
-    };
-    const result = await menus.updateOne(filter, updateDoc, options);
-    res.send(result);
+  const updateData = req.body;
+  const menuId = new ObjectId(id);
+
+  if (updateData.featured === true) {
+    const menuItem = await menus.findOne({ _id: menuId });
+    if (!menuItem) {
+      return res.status(404).send({ message: 'Menu item not found' });
+    }
+    if (menuItem.status !== 'approved') {
+      return res.status(422).send({ message: 'Only approved menu items can be featured' });
+    }
+
+    const vendorId = menuItem.vendor?.id;
+    if (!vendorId || !ObjectId.isValid(vendorId)) {
+      return res.status(403).send({ message: 'Only Premium vendors can feature menu items' });
+    }
+
+    const vendorUser = await user.findOne(
+      { _id: new ObjectId(vendorId) },
+      { projection: { premium: 1 } },
+    );
+    if (vendorUser?.premium !== true) {
+      return res.status(403).send({ message: 'Only Premium vendors can feature menu items' });
+    }
+
+  }
+
+  const filter = { _id: menuId };
+  const options = { upsert: true };
+  const updateDoc = { $set: updateData };
+  const result = await menus.updateOne(filter, updateDoc, options);
+  res.send(result);
 })
 
 app.get('/vendor_order/:vendorid', async(req, res) => {
@@ -160,18 +188,13 @@ app.patch('/adminmenu/:id', async (req, res) => {
   const id = req.params.id;
   const updatedData = req.body;
 
-  const menuId = new ObjectId(id);
-
-  if (updatedData.featured === true) {
-    const featuredCount = await menus.countDocuments({
-      featured: true,
-      _id: { $ne: menuId },
+  if (Object.prototype.hasOwnProperty.call(updatedData, 'featured')) {
+    return res.status(403).send({
+      message: 'Featured status is managed by Premium vendors',
     });
-
-    if (featuredCount >= 3) {
-      return res.status(409).send({ message: 'Only three menu items can be featured' });
-    }
   }
+
+  const menuId = new ObjectId(id);
   const result = await menus.updateOne({ _id: menuId }, { $set: updatedData });
   res.send(result);
 });
