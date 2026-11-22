@@ -5,10 +5,6 @@ import 'dotenv/config'
 import Stripe from "stripe";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
-console.log("STRIPE_SECRET_KEY exists:", !!process.env.STRIPE_SECRET_KEY);
-console.log("Db_URI exists:", !!process.env.DB_URI);
-console.log("CLIENT_URL exists:", !!process.env.CLIENT_URL);
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const app = express()
@@ -383,6 +379,5 @@ app.post('/payments/checkout-verify',VerifyToken,verifyVendor, async (req, res)=
   res.send({ success: false, message: 'Payment verification failed' });
 })
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+
+export default app;
