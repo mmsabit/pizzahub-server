@@ -6,7 +6,7 @@ import Stripe from "stripe";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
 console.log("STRIPE_SECRET_KEY exists:", !!process.env.STRIPE_SECRET_KEY);
-console.log("Db_URI exists:", !!process.env.Db_URI);
+console.log("Db_URI exists:", !!process.env.DB_URI);
 console.log("CLIENT_URL exists:", !!process.env.CLIENT_URL);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
