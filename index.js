@@ -379,5 +379,10 @@ app.post('/payments/checkout-verify',VerifyToken,verifyVendor, async (req, res)=
   res.send({ success: false, message: 'Payment verification failed' });
 })
 
+if (process.env.VERCEL !== '1') {
+  app.listen(port, () => {
+    console.log(`PizzaHub API listening on port ${port}`);
+  });
+}
 
 export default app;
