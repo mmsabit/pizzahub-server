@@ -5,6 +5,8 @@ import 'dotenv/config'
 import Stripe from "stripe";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
+
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const app = express()
@@ -13,7 +15,7 @@ const port = process.env.PORT || 8000
 app.use(cors());
 app.use(express.json());
 
-const client = new MongoClient(`${process.env.Db_URI}`);
+const client = new MongoClient(`${process.env.DB_URI}`);
 
 export async function connectToMongoDB(){
     try{
