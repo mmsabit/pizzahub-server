@@ -36,6 +36,8 @@ app.get('/',(req,res) =>{
     res.send("Ready with your pizza")
 })
 
+//All API
+
 app.get('/menus/search', async (req, res) => {
     try {
       const search = req.query.search;
@@ -55,9 +57,33 @@ app.get('/menus/search', async (req, res) => {
     }
 });
 
+app.get('/menu/:id', async(req, res) => {
+  const id = req.params.id;
+  const result = await menus.findOne({_id: new ObjectId(id)});
+  res.send(result);
+})
+
+app.get('/order/:id', async(req, res) => {
+  const id = req.params.id;
+  const result = await order.findOne({_id: new ObjectId(id)});
+  res.send(result);
+})
+
+// Open API
+app.get('/menu',async(req,res) =>{
+  const menuItem = await menus.find({status: "approved"}).toArray();
+  res.send(menuItem);
+})
+
+app.get('/available-menu', async(req, res)=>{
+  const availMenu = await menus.find({available: true, status: "approved"}).toArray();
+  res.send(availMenu);
+})
+
+//Vendor API
 app.get('/menus/:vendorId', async (req, res) => {
   const vendorId = req.params.vendorId;
-  const menu = await menus.find({'vendor.id': vendorId},{
+  const menu = await menus.find({'vendor.id': vendorId, status: { $ne: "rejected" }},{
       projection: {
         description: 0,
         vendor: 0,
@@ -67,23 +93,37 @@ app.get('/menus/:vendorId', async (req, res) => {
   res.send(menu)
 })
 
-app.get('/menu',async(req,res) =>{
-  const menuItem = await menus.find({status: "approved"}).toArray();
-  res.send(menuItem);
-})
-
-app.get('/menu/:id', async(req, res) => {
-  const id = req.params.id;
-  const result = await menus.findOne({_id: new ObjectId(id)});
-  res.send(result);
-})
-
 app.post('/menus',async(req,res) =>{
   const newData = req.body;
-  const result = await menus.insertOne(newData);
-  res.send(result);
+  const vendorId = newData.vendor.id;
+  const vendorUser = await user.findOne({ _id: new ObjectId(vendorId) });
+  const premium = vendorUser.premium;
+  
+  if(!premium){
+    const menuCount = await menus.countDocuments({'vendor.id': vendorId});
+    if(menuCount >= 3){
+      return res.status(403).send({
+          message: "You reached your free limit. Upgrade your plan."
+        });
+    }
+  }
+   const result = await menus.insertOne(newData);
+   res.send(result);
 })
 
+app.patch('/order/:id', async(req,res)=>{
+  const id = req.params.id;
+    const updateData = req.body;
+    const filter = {_id: new ObjectId(id)};
+    const options = { upsert: true };
+    const updateDoc = {
+        $set: updateData,
+    };
+    const result = await order.updateOne(filter, updateDoc, options);
+    res.send(result);
+})
+
+// Vendor and Admin
 app.delete('/menu/:id', async(req,res)=>{
   const id = req.params.id;
   const query = {_id: new ObjectId(id)};
@@ -103,10 +143,13 @@ app.patch('/menu/:id', async(req,res)=>{
     res.send(result);
 })
 
-app.get('/available-menu', async(req, res)=>{
-  const availMenu = await menus.find({available: true, status: "approved"}).toArray();
-  res.send(availMenu);
+app.get('/vendor_order/:vendorid', async(req, res) => {
+  const id = req.params.vendorid;
+  const result = await order.find({"vendor.id": id}).toArray();
+  res.send(result);
 })
+
+//ADMIN API
 
 app.get('/adminmenu/',async(req,res) =>{
   const menuItem = await menus.find({}).toArray();
@@ -133,44 +176,53 @@ app.patch('/adminmenu/:id', async (req, res) => {
   res.send(result);
 });
 
-app.post('/order', async (req, res) =>{
-  const newData = req.body;
-  const result = await order.insertOne(newData);
-  res.send(result);
-})
-
-app.get('/order/:id', async(req, res) => {
-  const id = req.params.id;
-  const result = await order.findOne({_id: new ObjectId(id)});
-  res.send(result);
-})
-
 app.get('/order', async(req, res)=>{
   const result = await order.find().toArray();
   res.send(result);
 })
 
-app.patch('/order/:id', async(req,res)=>{
+app.get('/payment', async(req, res)=>{
+  const result = await payments.find().toArray();
+  res.send(result);
+})
+
+app.get('/vendor-data/:id', async(req, res) =>{
   const id = req.params.id;
-    const updateData = req.body;
-    const filter = {_id: new ObjectId(id)};
-    const options = { upsert: true };
-    const updateDoc = {
-        $set: updateData,
-    };
-    const result = await order.updateOne(filter, updateDoc, options);
-    res.send(result);
+  const result = await user.findOne({_id: new ObjectId(id)});
+  res.send(result);
+})
+
+app.get('/vendor',async(req, res) =>{
+  const result = await user.find({role:"vendor"}).toArray();
+  res.send(result);
+} )
+
+app.get('/user',async(req, res) =>{
+  const result = await user.find({role:"user"}).toArray();
+  res.send(result);
+} )
+
+//USER API
+
+app.post('/order', async (req, res) =>{
+  const newData = req.body;
+  const uid = newData.customer.id;
+  const deliverdate = newData.deliveryDate;
+
+  const deliveryVerify = await order.findOne({"customer.id": uid, deliveryDate:deliverdate});
+  if(deliveryVerify){
+    return res.status(403).send({
+          message: "You already order same item in same date"
+        });
+  }
+
+  const result = await order.insertOne(newData);
+  res.send(result);
 })
 
 app.get('/customer_order/:userid', async(req, res) => {
   const id = req.params.userid;
   const result = await order.find({"customer.id": id}).toArray();
-  res.send(result);
-})
-
-app.get('/vendor_order/:vendorid', async(req, res) => {
-  const id = req.params.vendorid;
-  const result = await order.find({"vendor.id": id}).toArray();
   res.send(result);
 })
 
